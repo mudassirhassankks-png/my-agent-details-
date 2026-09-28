@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MTN Agent Database</title>
 <meta name="theme-color" content="#FFCC00">
+<link rel="manifest" href="manifest.json">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
 body{background:#f4f4f4}
-.header{background:#FFCC00;padding:15px;text-align:center;position:sticky;top:0;z-index:10}
+.header{background:#FFCC00;padding:15px;text-align:center;position:sticky;top:0;z-index:10;display:flex;justify-content:space-between;align-items:center}
 .header h1{font-weight:900;font-size:20px}
 .container{max-width:480px;margin:0 auto;padding:15px}
 .card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 2px 10px rgba(0,0,0,.08);margin-bottom:14px}
@@ -18,129 +19,116 @@ input:focus{border-color:#FFCC00;outline:none}
 .btn-yellow{background:#FFCC00;color:#000}
 .btn-grey{background:#eee;color:#000}
 .hidden{display:none}
-.link{color:#0066cc;text-align:center;display:block;margin:10px 0;cursor:pointer;text-decoration:underline;font-size:14px}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .badge{background:#000;color:#FFCC00;padding:5px 12px;border-radius:20px;font-size:12px}
 .success{background:#d4edda;color:#155724;padding:12px;border-radius:10px;text-align:center;font-weight:bold;margin-bottom:10px}
-.error{background:#f8d7da;color:#721c24;padding:12px;border-radius:10px;text-align:center;font-weight:bold;margin-bottom:10px}
 .agent{display:flex;gap:12px;background:#fff;border-radius:12px;padding:12px;margin:10px 0;align-items:center}
 .agent img{width:60px;height:60px;border-radius:50%;object-fit:cover;border:2px solid #FFCC00}
 .actions{display:flex;gap:6px;margin-top:6px}
 .actions button{padding:6px 12px;border-radius:6px;border:none;font-size:12px;font-weight:bold;cursor:pointer}
 .view{background:#FFCC00}.del{background:#ff3b30;color:#fff}
 .detail{background:#fffbe6;border:2px dashed #FFCC00;border-radius:10px;padding:10px;margin-top:8px}
+.total-bar{display:flex;justify-content:space-between;background:#000;color:#FFCC00;padding:10px 15px;border-radius:10px;margin-bottom:10px;font-weight:bold}
 </style>
 </head>
 <body>
-<div class="header"><h1>MTN Agent Database</h1></div>
+<div class="header">
+<h1>MTN Agent Database</h1>
+<span id="countBadge" class="badge" style="background:#000;color:#FFCC00">0 Agents</span>
+</div>
+
 <div class="container">
+<div id="welcomeMsg" class="success">✅ Offline Ready - Works without Internet</div>
 
-<div id="loginPage" class="card">
-<h3 style="text-align:center">Login</h3>
-<div id="loginAlert" class="hidden"></div>
-<input id="loginEmail" type="email" placeholder="Email">
-<input id="loginPass" type="password" placeholder="Password">
-<button class="btn" onclick="login()">LOGIN</button>
-<span class="link" onclick="showPage('forgotPage')">Forgot Password?</span>
-<span class="link" onclick="showPage('registerPage')">Add Account / Register</span>
+<div class="card">
+<h3>Add New Agent</h3>
+<input id="name" placeholder="Agent Name *">
+<input id="phone" placeholder="Phone Number *">
+<input id="nin" placeholder="NIN (optional)">
+<input id="bvn" placeholder="BVN (optional)">
+<textarea id="addr" rows="2" placeholder="Address (optional)"></textarea>
+<input id="photo" type="file" accept="image/*">
+<img id="preview" style="width:70px;height:70px;border-radius:50%;display:none;margin-top:8px;object-fit:cover;border:2px solid #FFCC00">
+<button class="btn btn-yellow" onclick="saveAgent()">💾 SAVE AGENT</button>
 </div>
 
-<div id="registerPage" class="card hidden">
-<h3 style="text-align:center">Add New Account</h3>
-<div id="regAlert" class="hidden"></div>
-<input id="regEmail" type="email" placeholder="Email">
-<input id="regPass" type="password" placeholder="Password">
-<input id="regPass2" type="password" placeholder="Confirm Password">
-<button class="btn" onclick="register()">CREATE ACCOUNT</button>
-<span class="link" onclick="showPage('loginPage')">Already have account? Login</span>
+<div class="total-bar"><span>Total Agents</span><span id="totalCount">0</span></div>
+
+<div class="card" style="padding:10px">
+<input id="search" placeholder="🔍 Search by Name or Phone..." oninput="showAgents()">
 </div>
 
-<div id="forgotPage" class="card hidden">
-<h3 style="text-align:center">Forgot Password</h3>
-<div id="forgotAlert" class="hidden"></div>
-<input id="forgotEmail" type="email" placeholder="Enter your Email">
-<button class="btn" onclick="forgot()">RECOVER PASSWORD</button>
-<span class="link" onclick="showPage('loginPage')">Back to Login</span>
+<div id="list"></div>
+<div id="empty" style="text-align:center;color:#999;padding:40px 20px">
+<p style="font-size:40px">📂</p>
+<p>No agents yet</p>
+<p style="font-size:12px">Add your first agent above</p>
+</div>
 </div>
 
-<div id="appPage" class="hidden">
-<div class="topbar"><span class="badge" id="userBadge"></span><button onclick="logout()" style="padding:6px 12px;border-radius:20px;border:1px solid #000;background:#fff;font-size:12px">Logout</button></div>
-<div id="welcomeMsg" class="success hidden"></div>
-<div class="card"><h3>Add Agent</h3><input id="name" placeholder="Agent Name *"><input id="phone" placeholder="Phone *"><input id="nin" placeholder="NIN"><input id="bvn" placeholder="BVN"><textarea id="addr" rows="2" placeholder="Address"></textarea><input id="photo" type="file" accept="image/*"><img id="preview" style="width:70px;height:70px;border-radius:50%;display:none;margin-top:8px;object-fit:cover;border:2px solid #FFCC00"><button class="btn btn-yellow" onclick="saveAgent()">SAVE AGENT</button></div>
-<div class="card" style="padding:10px"><input id="search" placeholder="🔍 Search..." oninput="showAgents()"></div><div id="list"></div><div id="empty" class="hidden" style="text-align:center;color:#999;padding:20px">No agents yet</div>
-</div>
-
-</div>
 <script>
-let currentUser=localStorage.getItem('mtn_user');let agents=[];let photoData='';let openId=-1;
-function showPage(id){['loginPage','registerPage','forgotPage','appPage'].forEach(p=>document.getElementById(p).classList.add('hidden'));document.getElementById(id).classList.remove('hidden');}
-function getUsers(){try{return JSON.parse(localStorage.getItem('mtn_users')||'{}')}catch(e){return {}}}
-function saveUsers(u){localStorage.setItem('mtn_users',JSON.stringify(u));}
-function showAlert(id,msg,type){let el=document.getElementById(id);el.innerHTML=msg;el.className=type;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),4000);}
+let agents = JSON.parse(localStorage.getItem('mtn_agents_direct')||'[]');
+let photoData='';
+let openId=-1;
 
-// REGISTER - BAYA KAIWA APP, SAI LOGIN
-function register(){
- let e=document.getElementById('regEmail').value.trim().toLowerCase();
- let p1=document.getElementById('regPass').value.trim();
- let p2=document.getElementById('regPass2').value.trim();
- if(!e||!p1){showAlert('regAlert','❌ Fill Email & Password','error');return;}
- if(p1!==p2){showAlert('regAlert','❌ Passwords do not match','error');return;}
- let u=getUsers();
- if(u[e]){showAlert('regAlert','⚠️ Account already exists! Please Login','error');setTimeout(()=>{showPage('loginPage');document.getElementById('loginEmail').value=e;},1200);return;}
- u[e]=p1; saveUsers(u);
- showAlert('regAlert','✅ Register Successful! Now Login','success');
- document.getElementById('regEmail').value='';document.getElementById('regPass').value='';document.getElementById('regPass2').value='';
- setTimeout(()=>{showPage('loginPage');document.getElementById('loginEmail').value=e;showAlert('loginAlert','✅ Register Successful! Please Login','success');},1500);
-}
+document.getElementById('photo').addEventListener('change',e=>{
+ let f=e.target.files[0];if(!f)return;
+ let r=new FileReader();
+ r.onload=ev=>{
+  photoData=ev.target.result;
+  let pr=document.getElementById('preview');
+  pr.src=photoData;pr.style.display='block';
+ };
+ r.readAsDataURL(f);
+});
 
-// LOGIN - GYARA: BAYA CEWA EMAIL NOT FOUND, SAI YA KAIKA REGISTER DIRECT
-function login(){
- let e=document.getElementById('loginEmail').value.trim().toLowerCase();
- let p=document.getElementById('loginPass').value.trim();
- let u=getUsers();
- if(!e||!p){showAlert('loginAlert','❌ Enter Email & Password','error');return;}
- if(!u[e]){
-   // IDAN EMAIL BAYA NAN, KAI TSAYE REGISTER
-   showPage('registerPage');
-   document.getElementById('regEmail').value=e;
-   showAlert('regAlert','ℹ️ New Email - Create password to register: '+e,'success');
-   return;
- }
- if(u[e]!==p){showAlert('loginAlert','❌ Wrong password! Try again','error');return;}
- localStorage.setItem('mtn_user',e);currentUser=e;loadApp();
-}
-
-function forgot(){
- let e=document.getElementById('forgotEmail').value.trim().toLowerCase();let u=getUsers();
- if(!e){showAlert('forgotAlert','❌ Enter Email','error');return;}
- if(!u[e]){showAlert('forgotAlert','❌ Email not found - Please Register first','error');return;}
- showAlert('forgotAlert','✅ Your password is: <b>'+u[e]+'</b>','success');
- setTimeout(()=>{showPage('loginPage');document.getElementById('loginEmail').value=e;document.getElementById('loginPass').value=u[e];},2000);
-}
-function logout(){localStorage.removeItem('mtn_user');currentUser=null;document.getElementById('loginEmail').value='';document.getElementById('loginPass').value='';showPage('loginPage');}
-function loadApp(){
- document.getElementById('userBadge').innerText=currentUser;
- agents=JSON.parse(localStorage.getItem('mtn_agents_'+currentUser)||'[]');
- showPage('appPage');
- let wm=document.getElementById('welcomeMsg');wm.innerText='✅ Login Successful! Welcome '+currentUser;wm.classList.remove('hidden');setTimeout(()=>wm.classList.add('hidden'),3000);
- showAgents();
-}
-document.getElementById('photo').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=ev=>{photoData=ev.target.result;let pr=document.getElementById('preview');pr.src=photoData;pr.style.display='block';};r.readAsDataURL(f);});
 function saveAgent(){
- let n=document.getElementById('name').value.trim();let ph=document.getElementById('phone').value.trim();let nin=document.getElementById('nin').value.trim();let bvn=document.getElementById('bvn').value.trim();let addr=document.getElementById('addr').value.trim();
- if(!n||!ph){alert('Enter Name & Phone');return;}
+ let n=document.getElementById('name').value.trim();
+ let ph=document.getElementById('phone').value.trim();
+ let nin=document.getElementById('nin').value.trim();
+ let bvn=document.getElementById('bvn').value.trim();
+ let addr=document.getElementById('addr').value.trim();
+ if(!n||!ph){alert('⚠️ Please enter Name & Phone!');return;}
  let obj={id:Date.now(),name:n,phone:ph,nin,bvn,addr,photo:photoData||'https://cdn-icons-png.flaticon.com/512/149/149071.png'};
- agents.unshift(obj);localStorage.setItem('mtn_agents_'+currentUser,JSON.stringify(agents));
- ['name','phone','nin','bvn','addr'].forEach(id=>document.getElementById(id).value='');document.getElementById('photo').value='';document.getElementById('preview').style.display='none';photoData='';showAgents();
+ agents.unshift(obj);
+ localStorage.setItem('mtn_agents_direct',JSON.stringify(agents));
+ ['name','phone','nin','bvn','addr'].forEach(id=>document.getElementById(id).value='');
+ document.getElementById('photo').value='';
+ document.getElementById('preview').style.display='none';
+ photoData='';
+ showAgents();
+ // success feedback
+ let w=document.getElementById('welcomeMsg');
+ w.innerText='✅ Agent Saved: '+n;
+ w.style.display='block';
+ setTimeout(()=>{w.innerText='✅ Offline Ready - Works without Internet';},2000);
 }
+
 function showAgents(){
- let q=document.getElementById('search').value.toLowerCase();let list=document.getElementById('list');list.innerHTML='';
+ let q=document.getElementById('search').value.toLowerCase();
+ let list=document.getElementById('list');
+ list.innerHTML='';
  let f=agents.filter(a=>a.name.toLowerCase().includes(q)||a.phone.includes(q));
- document.getElementById('empty').classList.toggle('hidden',agents.length!=0);
- f.forEach(a=>{let idx=agents.findIndex(x=>x.id==a.id);let d=document.createElement('div');d.className='agent';d.innerHTML=`<img src="${a.photo}"><div style="flex:1"><b>${a.name}</b><br><small>📞 ${a.phone}</small><div class="actions"><button class="view" onclick="toggle(${idx})">${openId==idx?'CLOSE':'VIEW'}</button><button class="del" onclick="delAg(${idx})">DELETE</button></div><div class="${openId==idx?'detail':'hidden'}"><p><b>Phone:</b> ${a.phone}</p><p><b>NIN:</b> ${a.nin||'-'}</p><p><b>BVN:</b> ${a.bvn||'-'}</p><p><b>Address:</b> ${a.addr||'-'}</p><button class="btn btn-grey" style="padding:8px;margin-top:6px" onclick="toggle(${idx})">CLOSE</button></div></div>`;list.appendChild(d);});
+ document.getElementById('empty').style.display = agents.length==0? 'block' : 'none';
+ document.getElementById('totalCount').innerText = agents.length;
+ document.getElementById('countBadge').innerText = agents.length + ' Agents';
+ f.forEach(a=>{
+  let idx=agents.findIndex(x=>x.id==a.id);
+  let d=document.createElement('div');
+  d.className='agent';
+  d.innerHTML=`<img src="${a.photo}"><div style="flex:1"><b>${a.name}</b><br><small>📞 ${a.phone}</small><div class="actions"><button class="view" onclick="toggle(${idx})">${openId==idx?'CLOSE':'VIEW'}</button><button class="del" onclick="delAg(${idx})">DELETE</button></div><div class="${openId==idx?'detail':'hidden'}"><p><b>Phone:</b> ${a.phone}</p><p><b>NIN:</b> ${a.nin||'-'}</p><p><b>BVN:</b> ${a.bvn||'-'}</p><p><b>Address:</b> ${a.addr||'-'}</p><button class="btn btn-grey" style="padding:8px;margin-top:6px" onclick="toggle(${idx})">CLOSE</button></div></div>`;
+  list.appendChild(d);
+ });
 }
-function toggle(i){openId=openId==i?-1:i;showAgents();}function delAg(i){if(confirm('Delete '+agents[i].name+'?')){agents.splice(i,1);localStorage.setItem('mtn_agents_'+currentUser,JSON.stringify(agents));if(openId==i)openId=-1;showAgents();}}
-if(currentUser)loadApp();else showPage('loginPage');
+
+function toggle(i){openId=openId==i?-1:i;showAgents();}
+function delAg(i){if(confirm('Delete '+agents[i].name+'?')){agents.splice(i,1);localStorage.setItem('mtn_agents_direct',JSON.stringify(agents));if(openId==i)openId=-1;showAgents();}}
+
+showAgents();
+
+// Offline App Service Worker
+if('serviceWorker' in navigator){
+ navigator.serviceWorker.register('sw.js').then(()=>console.log('Offline Ready!'));
+}
 </script>
 </body>
 </html>
